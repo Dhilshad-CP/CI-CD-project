@@ -1,0 +1,32 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - dev
+      - uat
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ secrets[format('{0}_HOST', github.ref_name | upper)] }}
+          username: ${{ secrets[format('{0}_USER', github.ref_name | upper)] }}
+          key: ${{ secrets[format('{0}_KEY', github.ref_name | upper)] }}
+          script: |
+            cd ~/myapp || mkdir ~/myapp && cd ~/myapp
+            if [ -d .git ]; then
+              git reset --hard
+              git pull
+            else
+              git clone git@github.com:${{ github.repository }} .
+            fi
+            npm install
+            pm2 restart all || pm2 start server.js --name myapp
