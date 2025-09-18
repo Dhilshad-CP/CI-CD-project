@@ -14,12 +14,29 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Set deployment secrets based on branch
+        id: set-secrets
+        run: |
+          if [ "${GITHUB_REF##*/}" == "dev" ]; then
+            echo "HOST=${{ secrets.DEV_HOST }}" >> $GITHUB_ENV
+            echo "USER=${{ secrets.DEV_USER }}" >> $GITHUB_ENV
+            echo "KEY=${{ secrets.DEV_KEY }}" >> $GITHUB_ENV
+          elif [ "${GITHUB_REF##*/}" == "uat" ]; then
+            echo "HOST=${{ secrets.UAT_HOST }}" >> $GITHUB_ENV
+            echo "USER=${{ secrets.UAT_USER }}" >> $GITHUB_ENV
+            echo "KEY=${{ secrets.UAT_KEY }}" >> $GITHUB_ENV
+          elif [ "${GITHUB_REF##*/}" == "main" ]; then
+            echo "HOST=${{ secrets.PROD_HOST }}" >> $GITHUB_ENV
+            echo "USER=${{ secrets.PROD_USER }}" >> $GITHUB_ENV
+            echo "KEY=${{ secrets.PROD_KEY }}" >> $GITHUB_ENV
+          fi
+
       - name: Deploy to EC2
         uses: appleboy/ssh-action@v0.1.10
         with:
-          host: ${{ secrets[format('{0}_HOST', github.ref_name | upper)] }}
-          username: ${{ secrets[format('{0}_USER', github.ref_name | upper)] }}
-          key: ${{ secrets[format('{0}_KEY', github.ref_name | upper)] }}
+          host: ${{ env.HOST }}
+          username: ${{ env.USER }}
+          key: ${{ env.KEY }}
           script: |
             cd ~/myapp || mkdir ~/myapp && cd ~/myapp
             if [ -d .git ]; then
