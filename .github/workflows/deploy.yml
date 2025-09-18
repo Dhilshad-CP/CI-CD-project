@@ -10,11 +10,14 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
+      # 1️⃣ Checkout the code
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Set deployment secrets based on branch
+      # 2️⃣ Set deployment environment variables based on branch
+      - name: Set deployment secrets
         run: |
           if [ "${GITHUB_REF##*/}" = "dev" ]; then
             echo "HOST=$DEV_HOST" >> $GITHUB_ENV
@@ -28,6 +31,7 @@ jobs:
             echo "HOST=$PROD_HOST" >> $GITHUB_ENV
             echo "USER=$PROD_USER" >> $GITHUB_ENV
             echo "KEY=$PROD_KEY" >> $GITHUB_ENV
+          fi
         shell: bash
         env:
           DEV_HOST: ${{ secrets.DEV_HOST }}
@@ -40,6 +44,7 @@ jobs:
           PROD_USER: ${{ secrets.PROD_USER }}
           PROD_KEY: ${{ secrets.PROD_KEY }}
 
+      # 3️⃣ Deploy the app via SSH
       - name: Deploy to EC2
         uses: appleboy/ssh-action@v0.1.10
         with:
@@ -47,12 +52,22 @@ jobs:
           username: ${{ env.USER }}
           key: ${{ env.KEY }}
           script: |
+            # Navigate to app folder
             cd ~/myapp || mkdir ~/myapp && cd ~/myapp
+
+            # Pull latest code
             if [ -d .git ]; then
               git reset --hard
               git pull
             else
               git clone git@github.com:${{ github.repository }} .
             fi
+
+            # Install dependencies
             npm install
+
+            # Start or restart the app with PM2
             pm2 restart all || pm2 start server.js --name myapp
+
+            # Optional: show status
+            pm2 status
