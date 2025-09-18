@@ -13,17 +13,22 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout the repo
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # Step 2: Deploy to the correct server based on branch
       - name: Deploy to EC2
         uses: appleboy/ssh-action@v0.1.10
         with:
-          host: ${{ github.ref_name == 'dev' && secrets.DEV_HOST || github.ref_name == 'uat' && secrets.UAT_HOST || secrets.PROD_HOST }}
-          username: ${{ github.ref_name == 'dev' && secrets.DEV_USER || github.ref_name == 'uat' && secrets.UAT_USER || secrets.PROD_USER }}
-          key: ${{ github.ref_name == 'dev' && secrets.DEV_KEY || github.ref_name == 'uat' && secrets.UAT_KEY || secrets.PROD_KEY }}
+          host: ${{ github.ref_name == 'dev' && '13.61.176.33' || github.ref_name == 'uat' && '13.60.62.233' || '13.60.51.209' }}
+          username: ubuntu
+          key: |
+-----BEGIN OPENSSH PRIVATE KEY-----
+b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW
+QyNTUxOQAAACDoSvy+SHoqKHk+//6gVX472hHRv4ILDXtET82GbuNOPAAAAKCRpZFAkaWR
+QAAAAAtzc2gtZWQyNTUxOQAAACDoSvy+SHoqKHk+//6gVX472hHRv4ILDXtET82GbuNOPA
+AAAECqGaQVuVHuWIjWUhGQ/QOdMcgf38VA/+oEX2pkNSqIwuhK/L5IeiooeT7//qBVfjva
+EdG/ggsNe0RPzYZu4048AAAAFnlvdXJfZW1haWxAZXhhbXBsZS5jb20BAgMEBQYH
+-----END OPENSSH PRIVATE KEY-----
           port: 22
           script: |
             # Navigate to application folder
